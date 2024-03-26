@@ -37,12 +37,12 @@ FROM $base_img
 ARG version
 ARG commit
 
-COPY --from=build /root/rpmbuild/RPMS/x86_64/gpu-manager-${version}-${commit}.el7.x86_64.rpm /tmp
 
 RUN yum install epel-release -y && \
   yum install -y which jq
 
 # Install packages
+COPY --from=build /root/rpmbuild/RPMS/x86_64/gpu-manager-${version}-${commit}.el7.x86_64.rpm /tmp
 RUN rpm -ivh /tmp/gpu-manager-${version}-${commit}.el7.x86_64.rpm \
 	&& rm -rf /tmp/gpu-manager-${version}-${commit}.el7.x86_64.rpm
 
