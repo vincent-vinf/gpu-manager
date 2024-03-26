@@ -25,3 +25,7 @@ fmt:
 .PHONY: lint
 lint:
 	@revive -config revive.toml -exclude vendor/... -exclude pkg/api/runtime/... ./...
+
+push:
+	docker tag  registry.cn-hangzhou.aliyuncs.com/adpc/kube-scheduler:v1.0.2
+	docker push registry.cn-hangzhou.aliyuncs.com/adpc/kube-scheduler:v1.0.2
