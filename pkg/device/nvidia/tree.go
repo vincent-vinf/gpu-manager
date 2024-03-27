@@ -446,7 +446,7 @@ func (t *NvidiaTree) MarkFree(node *NvidiaNode, util int64, memory int64) {
 
 	if n.AllocatableMeta.Cores == HundredCore {
 		if t.realMode {
-			n.pendingReset = true
+			//n.pendingReset = true
 			// We need to clear user settings
 			if err := resetGPUFeature(n, t.realMode); err != nil {
 				klog.Warningf("can't reset GPU %s, %v", n.Meta.BusId, err)
@@ -632,8 +632,12 @@ func resetGPUFeature(node *NvidiaNode, realMode bool) error {
 
 	// GPU in the real world has a BusId
 	if len(node.Meta.BusId) > 0 {
-		dev, _ := nvml.DeviceGetHandleByIndex(uint(node.Meta.ID))
-		err := dev.DeviceSetComputeMode(nvml.COMPUTEMODE_DEFAULT)
+		dev, err := nvml.DeviceGetHandleByIndex(uint(node.Meta.ID))
+		if err != nil {
+			klog.V(3).Infof("can't get device handler %d, %v", node.Meta.ID, err)
+			return err
+		}
+		err = dev.DeviceSetComputeMode(nvml.COMPUTEMODE_DEFAULT)
 		if err != nil {
 			klog.V(3).Infof("can't set compute mode to default for %s, %v", node.Meta.BusId, err)
 			return err

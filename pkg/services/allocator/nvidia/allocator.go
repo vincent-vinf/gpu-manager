@@ -29,6 +29,8 @@ import (
 	"sync"
 	"time"
 
+	"tkestack.io/nvml"
+
 	nveval "tkestack.io/gpu-manager/pkg/algorithm/nvidia"
 	"tkestack.io/gpu-manager/pkg/config"
 	"tkestack.io/gpu-manager/pkg/device"
@@ -64,7 +66,7 @@ func init() {
 	allocator.Register("nvidia_test", NewNvidiaTopoAllocatorForTest)
 }
 
-//NvidiaTopoAllocator is an allocator for Nvidia GPU
+// NvidiaTopoAllocator is an allocator for Nvidia GPU
 type NvidiaTopoAllocator struct {
 	sync.Mutex
 
@@ -101,7 +103,7 @@ var (
 	waitTimeout                          = 10 * time.Second
 )
 
-//NewNvidiaTopoAllocator returns a new NvidiaTopoAllocator
+// NewNvidiaTopoAllocator returns a new NvidiaTopoAllocator
 func NewNvidiaTopoAllocator(config *config.Config,
 	tree device.GPUTree,
 	k8sClient kubernetes.Interface,
@@ -145,8 +147,8 @@ func NewNvidiaTopoAllocator(config *config.Config,
 	return alloc
 }
 
-//NewNvidiaTopoAllocatorForTest returns a new NvidiaTopoAllocator
-//with fake docker client, just for testing.
+// NewNvidiaTopoAllocatorForTest returns a new NvidiaTopoAllocator
+// with fake docker client, just for testing.
 func NewNvidiaTopoAllocatorForTest(config *config.Config,
 	tree device.GPUTree,
 	k8sClient kubernetes.Interface,
@@ -659,7 +661,7 @@ func (ta *NvidiaTopoAllocator) freeGPU(podUids []string) {
 }
 
 // #lizard forgives
-//Allocate tries to allocate GPU node for each request
+// Allocate tries to allocate GPU node for each request
 func (ta *NvidiaTopoAllocator) Allocate(_ context.Context, reqs *pluginapi.AllocateRequest) (*pluginapi.AllocateResponse, error) {
 	ta.Lock()
 	defer ta.Unlock()
@@ -681,6 +683,21 @@ func (ta *NvidiaTopoAllocator) Allocate(_ context.Context, reqs *pluginapi.Alloc
 
 	klog.V(4).Infof("Request GPU device: %s", strings.Join(req.DevicesIDs, ","))
 
+	nvml.Init()
+	dev, err := nvml.DeviceGetHandleByIndex(0)
+	if err != nil {
+		klog.V(3).Infof("DeviceGetHandleByIndex err: %v", err)
+	} else {
+		fmt.Printf("DeviceGetHandleByIndex Get dev %d\n", 0)
+	}
+	eccCurrent, eccPending, err := dev.DeviceGetEccMode()
+	if err != nil {
+		klog.V(3).Infof("DeviceGetEccMode err: %v", err)
+	} else {
+		klog.V(3).Infof("DeviceGetEccMode: %+v, %+v\n", eccCurrent, eccPending)
+	}
+	nvml.Shutdown()
+	// todo remove
 	ta.recycle()
 
 	if ta.unfinishedPod != nil {
@@ -767,12 +784,12 @@ func (ta *NvidiaTopoAllocator) Allocate(_ context.Context, reqs *pluginapi.Alloc
 	return resps, nil
 }
 
-//ListAndWatch is not implement
+// ListAndWatch is not implement
 func (ta *NvidiaTopoAllocator) ListAndWatch(e *pluginapi.Empty, s pluginapi.DevicePlugin_ListAndWatchServer) error {
 	return fmt.Errorf("not implement")
 }
 
-//ListAndWatchWithResourceName send devices for request resource back to server
+// ListAndWatchWithResourceName send devices for request resource back to server
 func (ta *NvidiaTopoAllocator) ListAndWatchWithResourceName(resourceName string, e *pluginapi.Empty, s pluginapi.DevicePlugin_ListAndWatchServer) error {
 	devs := make([]*pluginapi.Device, 0)
 	for _, dev := range ta.capacity() {
@@ -793,14 +810,14 @@ func (ta *NvidiaTopoAllocator) ListAndWatchWithResourceName(resourceName string,
 	return nil
 }
 
-//GetDevicePluginOptions returns empty DevicePluginOptions
+// GetDevicePluginOptions returns empty DevicePluginOptions
 func (ta *NvidiaTopoAllocator) GetDevicePluginOptions(ctx context.Context, e *pluginapi.Empty) (*pluginapi.DevicePluginOptions, error) {
 	return &pluginapi.DevicePluginOptions{PreStartRequired: true}, nil
 }
 
-//PreStartContainer find the podUID by comparing request deviceids with deviceplugin
-//checkpoint data, then checks the validation of allocation of the pod.
-//Update pod annotation if check success, otherwise evict the pod.
+// PreStartContainer find the podUID by comparing request deviceids with deviceplugin
+// checkpoint data, then checks the validation of allocation of the pod.
+// Update pod annotation if check success, otherwise evict the pod.
 func (ta *NvidiaTopoAllocator) PreStartContainer(ctx context.Context, req *pluginapi.PreStartContainerRequest) (*pluginapi.PreStartContainerResponse, error) {
 	ta.Lock()
 	defer ta.Unlock()

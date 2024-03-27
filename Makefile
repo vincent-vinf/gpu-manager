@@ -30,3 +30,6 @@ lint:
 push: img
 	docker tag thomassong/gpu-manager:1.1.4 registry.cn-hangzhou.aliyuncs.com/adpc/gpu-manager-fork:1.1.4
 	docker push registry.cn-hangzhou.aliyuncs.com/adpc/gpu-manager-fork:1.1.4
+
+pure:
+	docker build --platform=linux/amd64 -t registry.cn-hangzhou.aliyuncs.com/adpc/gpu-manager-fork:1.1.4-pure -f build/pure.dockerfile .

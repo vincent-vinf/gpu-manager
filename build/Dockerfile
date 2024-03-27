@@ -41,14 +41,6 @@ ARG commit
 RUN yum install epel-release -y && \
   yum install -y which jq
 
-# Install packages
-COPY --from=build /root/rpmbuild/RPMS/x86_64/gpu-manager-${version}-${commit}.el7.x86_64.rpm /tmp
-RUN rpm -ivh /tmp/gpu-manager-${version}-${commit}.el7.x86_64.rpm \
-	&& rm -rf /tmp/gpu-manager-${version}-${commit}.el7.x86_64.rpm
-
-# kubelet
-VOLUME ["/var/lib/kubelet/device-plugins"]
-
 # gpu manager storage
 VOLUME ["/etc/gpu-manager/vm"]
 VOLUME ["/etc/gpu-manager/vdriver"]
@@ -57,18 +49,25 @@ VOLUME ["/var/log/gpu-manager"]
 # nvidia library search location
 VOLUME ["/usr/local/host"]
 
+ENV PATH=$PATH:/usr/local/nvidia/bin
+COPY start.sh /
+COPY copy-bin-lib.sh /
+
 RUN echo "/usr/local/nvidia/lib" > /etc/ld.so.conf.d/nvidia.conf && \
     echo "/usr/local/nvidia/lib64" >> /etc/ld.so.conf.d/nvidia.conf
-
-ENV PATH=$PATH:/usr/local/nvidia/bin
 
 # cgroup
 VOLUME ["/sys/fs/cgroup"]
 
+# kubelet
+VOLUME ["/var/lib/kubelet/device-plugins"]
+
+# Install packages
+COPY --from=build /root/rpmbuild/RPMS/x86_64/gpu-manager-${version}-${commit}.el7.x86_64.rpm /tmp
+RUN rpm -ivh /tmp/gpu-manager-${version}-${commit}.el7.x86_64.rpm \
+	&& rm -rf /tmp/gpu-manager-${version}-${commit}.el7.x86_64.rpm
+
 # display
 EXPOSE 5678
-
-COPY start.sh /
-COPY copy-bin-lib.sh /
 
 CMD ["/start.sh"]
