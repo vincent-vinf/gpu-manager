@@ -29,8 +29,6 @@ import (
 	"sync"
 	"time"
 
-	"tkestack.io/nvml"
-
 	nveval "tkestack.io/gpu-manager/pkg/algorithm/nvidia"
 	"tkestack.io/gpu-manager/pkg/config"
 	"tkestack.io/gpu-manager/pkg/device"
@@ -683,21 +681,6 @@ func (ta *NvidiaTopoAllocator) Allocate(_ context.Context, reqs *pluginapi.Alloc
 
 	klog.V(4).Infof("Request GPU device: %s", strings.Join(req.DevicesIDs, ","))
 
-	nvml.Init()
-	dev, err := nvml.DeviceGetHandleByIndex(0)
-	if err != nil {
-		klog.V(3).Infof("DeviceGetHandleByIndex err: %v", err)
-	} else {
-		fmt.Printf("DeviceGetHandleByIndex Get dev %d\n", 0)
-	}
-	eccCurrent, eccPending, err := dev.DeviceGetEccMode()
-	if err != nil {
-		klog.V(3).Infof("DeviceGetEccMode err: %v", err)
-	} else {
-		klog.V(3).Infof("DeviceGetEccMode: %+v, %+v\n", eccCurrent, eccPending)
-	}
-	nvml.Shutdown()
-	// todo remove
 	ta.recycle()
 
 	if ta.unfinishedPod != nil {
