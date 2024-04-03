@@ -1,12 +1,11 @@
 ARG base_img
-FROM registry.cn-hangzhou.aliyuncs.com/adpc/cuda:10.1-devel-centos7 as build
+FROM nvidia/cuda:12.3.2-devel-centos7 as build
 
 ARG version
 ARG commit
 
-RUN yum install -y rpm-build make
 RUN yum -y install https://packages.endpointdev.com/rhel/7/os/x86_64/endpoint-repo.x86_64.rpm
-RUN yum install -y git
+RUN yum install -y rpm-build make
 # default git has problems while cloning some repository
 # RUN yum install -y https://repo.ius.io/ius-release-el7.rpm \
 #  && yum install -y git222

@@ -26,10 +26,11 @@ fmt:
 lint:
 	@revive -config revive.toml -exclude vendor/... -exclude pkg/api/runtime/... ./...
 
+
+IMG ?= registry.cn-hangzhou.aliyuncs.com/adpc/gpu-manager-fork:1.2.0
+
 .PHONY: push
 push: img
-	docker tag thomassong/gpu-manager:1.1.4 registry.cn-hangzhou.aliyuncs.com/adpc/gpu-manager-fork:1.1.9
-	docker push registry.cn-hangzhou.aliyuncs.com/adpc/gpu-manager-fork:1.1.9
+	docker tag thomassong/gpu-manager:1.1.4 ${IMG}
+	docker push ${IMG}
 
-pure:
-	docker build --platform=linux/amd64 -t registry.cn-hangzhou.aliyuncs.com/adpc/gpu-manager-fork:1.1.4-pure -f build/pure.dockerfile .
